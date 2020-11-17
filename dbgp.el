@@ -346,7 +346,7 @@ See `read-from-minibuffer' for details of HISTORY argument."
                                           :server 1
                                           :service port
                                           :family 'ipv4
-                                          :nowait t
+                                          :nowait (< emacs-major-version 26)
                                           :noquery t
                                           :filter 'dbgp-comint-setup
                                           :sentinel 'dbgp-listener-sentinel
