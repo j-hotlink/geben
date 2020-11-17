@@ -2178,12 +2178,13 @@ the file."
 (defun geben-context-property-tree-has-complete-children (tree)
   "Determine whether TREE has complete child nodes.
 Child nodes can be short for :property property of TREE."
-  (let* ((property (widget-get tree :property))
-         (children (xml-get-children property 'property))
+  (let* ((property    (widget-get tree :property))
+         (children    (xml-get-children property 'property))
+         (name        (xml-get-attribute property 'fullname))
          (numchildren (and children
                            (string-to-number (xml-get-attribute property 'numchildren)))))
-    (and children
-         (<= numchildren (length children)))))
+    (if (string= name "$GLOBALS") (setq numchildren 0))
+    (and children (<= numchildren (length children)))))
 
 (defun geben-context-property-tree-create-node (property)
   "Create nodes which represent PROPERTY."
