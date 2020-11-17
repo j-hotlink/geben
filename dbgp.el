@@ -847,27 +847,22 @@ takes over the filter."
         (dbgp-session-filter proc ""))))
 
 (defun dbgp-session-response-to-chunk ()
-  (let* ((string dbgp-filter-pending-text)
-         (send (length string))                ; string end
-         (lbeg 0)                        ; line begin
-         tbeg                                ; text begin
-         tlen                                ; text length
-         (i 0)                                ; running pointer
-         chunks)
-    (while (< i send)
-      (if (< 0 (elt string i))
-          (incf i)
-        (setq tlen (string-to-number (substring string lbeg i)))
-        (setq tbeg (1+ i))
-        (setq i (+ tbeg tlen))
-        (when (< i send)
-          (setq chunks (cons (substring string tbeg i) chunks))
-          (incf i)
-          (setq lbeg i))))
-    ;; Remove chunk from `dbgp-filter-pending-text'.
-    (setq dbgp-filter-pending-text
-          (and (< lbeg i)
-               (substring dbgp-filter-pending-text lbeg)))
+  (let* ((string    dbgp-filter-pending-text)
+         (parts     (split-string string "\0" nil))   ;; force element after trailing "\0"
+         (chunks    '())
+         (done      0))
+    (while (> (length parts) 2)       ;; denotes valid head, size and data
+      (let* ((head   (pop parts))
+             (data   (pop parts))
+             (need   (string-to-number head))
+             (size   (string-bytes data)))
+        (if (= need size)
+            (progn
+              (setq chunks (cons data chunks))
+              (setq done   (+ done (length head) (length data) 2)))
+          (error "Invalid chunk : header size = %s, actual data length = %s" need size))))
+    (if (> (length chunks) 0)
+        (setq dbgp-filter-pending-text (substring dbgp-filter-pending-text done)))
     (nreverse chunks)))
 
 (defun dbgp-session-sentinel (proc string)
