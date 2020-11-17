@@ -1,4 +1,13 @@
-Version 0.26 (20010-03-29)
+Version 0.27 (2020-11-16)
+
+  * improved:
+    - `dbgp-session-response-to-chunk', support for unicode chunks required for newer
+       php versions (eg. 7.4)
+  * workaround:
+    - `geben-context-property-tree-has-complete-children', xdebug on php 7.4 sends incorrect
+      'numchildren' field value for $GLOBALS
+
+Version 0.26 (2010-03-29)
 
   * new command:
     - `geben-find-file', bound to 'C-c f' in geben-mode.
