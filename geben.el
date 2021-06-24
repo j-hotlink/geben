@@ -171,13 +171,17 @@ Typically `pop-to-buffer' or `switch-to-buffer'."
 ;; utilities
 ;;==============================================================
 
+;;
+;; removed deprecated flet
+;; lifted from here: https://github.com/emacs-csharp/csharp-mode/issues/39
+;;
 (defsubst geben-flatten (x)
   "Make cons X to a flat list."
-  (flet ((rec (x acc)
-              (cond ((null x) acc)
-                    ((atom x) (cons x acc))
-                    (t (rec (car x) (rec (cdr x) acc))))))
-    (rec x nil)))
+  (let ((rec (lambda (x acc)
+               (cond ((null x) acc)
+                     ((atom x) (cons x acc))
+                     (t (funcall rec (car x) (funcall rec (cdr x) acc)))))))
+    (funcall rec x nil)))
 
 (defsubst geben-what-line (&optional pos)
   "Get the number of the line in which POS is located.
@@ -1290,6 +1294,10 @@ debugging is finished."
               (plist-get rhs :expression))))
 
 ;; session storage
+(defun dump-plist(obj)
+    (unless (null obj)
+        (princ (format "%s %s\n" (car obj)  (cadr obj)))
+        (dump-plist (cddr obj))))
 
 (defun geben-session-breakpoint-storage-add (session bp)
   (let* ((storage (geben-session-storage session))
