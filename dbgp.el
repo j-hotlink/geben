@@ -238,6 +238,14 @@ The session process is alive until the session is disconnected.
 (defvar dbgp-proxy-idekey-history nil)
 (defvar dbgp-proxy-session-port-history nil)
 
+(defvar dbgp-listener-interface nil
+  "Network interface to use to determine local host ip address.
+Used when no ip address defined by dbgp-listener-ip-address.")
+
+(defvar dbgp-listener-ipv4address nil
+  "The ip address on which to listen, given as an ipv4 array.
+Eg: [192 168 0 1].  If nil, the ip address of dbgp-listener-interface is used")
+
 ;;--------------------------------------------------------------
 ;; interactive read functions
 ;;--------------------------------------------------------------
@@ -336,21 +344,43 @@ See `read-from-minibuffer' for details of HISTORY argument."
       (message (cdr result)))
     result))
 
+(defun dbgp-get-local-listener-interface ()
+  "Return the network interface for the listener, or default to eth0."
+  (if dbgp-listener-interface dbgp-listener-interface "eth0"))
+
+(defun dbgp-get-local-listener-ipv4address ()
+  "Return an ip address of the current machine as a vector.
+Uses 'dbgp-get-local-listener-interface' to choose the interface."
+  (let* ((dev (dbgp-get-local-listener-interface))
+        (info (network-interface-info dev))
+        (ipaslist (butlast (append (car info) nil) 1)))
+    (vconcat ipaslist)))
+
+(defun dbgp-get-local-listener-ipv4address-and-port (port)
+  "Return the ip address and PORT to listen on as a vector.
+Result is suitable for 'make-network-process' :local argument"
+  (let ((ipv4address (if dbgp-listener-ipv4address
+                       dbgp-listener-ipv4address
+                     (dbgp-get-local-listener-ipv4address))))
+    (vconcat ipv4address (list port))))
+
 ;;;###autoload
 (defun dbgp-exec (port &rest session-params)
   "Start a new DBGp listener listening to PORT."
   (if (dbgp-listener-alive-p port)
       (cons (dbgp-listener-find port)
             (format "The DBGp listener for %d has already been started." port))
-    (let ((listener (make-network-process :name (dbgp-make-listner-name port)
-                                          :server 1
-                                          :service port
-                                          :family 'ipv4
-                                          :nowait (< emacs-major-version 26)
-                                          :noquery t
-                                          :filter 'dbgp-comint-setup
-                                          :sentinel 'dbgp-listener-sentinel
-                                          :log 'dbgp-listener-log)))
+    (let* ((ip-port (dbgp-get-local-listener-ipv4address-and-port port))
+           (listener (make-network-process :name (dbgp-make-listner-name port)
+                                            :server 1
+                                            :local ip-port
+                                            :service port
+                                            :family 'ipv4
+                                            :nowait (< emacs-major-version 26)
+                                            :noquery t
+                                            :filter 'dbgp-comint-setup
+                                            :sentinel 'dbgp-listener-sentinel
+                                            :log 'dbgp-listener-log)))
       (unless listener
         (error "Failed to create DBGp listener for port %d" port))
       (dbgp-plist-put listener :listener listener)
