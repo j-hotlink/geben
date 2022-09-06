@@ -434,7 +434,7 @@ associating with the IDEKEY."
 The proxy should be found at IP-OR-ADDR / PORT.
 This create a new DBGp listener and register it to the proxy
 associating with the IDEKEY."
-  (block dbgp-proxy-register-exec
+  (cl-block dbgp-proxy-register-exec
     ;; check whether the proxy listener already exists
     (let ((listener (find-if (lambda (listener)
                                (let ((proxy (dbgp-proxy-get listener)))
@@ -444,7 +444,7 @@ associating with the IDEKEY."
                                       (equal idekey (plist-get proxy :idekey)))))
                              dbgp-listeners)))
       (if listener
-          (return-from dbgp-proxy-register-exec
+          (cl-return-from dbgp-proxy-register-exec
             (cons listener
                   (format "The DBGp proxy listener has already been started. idekey: %s" idekey)))))
 
@@ -476,7 +476,7 @@ associating with the IDEKEY."
         ;; connection failed or the proxy respond an error.
         ;; give up.
         (dbgp-process-kill listener-proc)
-        (return-from dbgp-proxy-register-exec
+        (cl-return-from dbgp-proxy-register-exec
           (if (not (consp result))
               (cons result
                     (cond
@@ -776,9 +776,9 @@ takes over the filter."
         (listener (dbgp-listener-get proc))
         (session-filter (dbgp-plist-get proc :session-filter))
         output process-window chunks)
-    (block dbgp-session-filter
+    (cl-block dbgp-session-filter
            (unless (buffer-live-p buf)
-             (return-from dbgp-session-filter))
+             (cl-return-from dbgp-session-filter))
 
            (with-current-buffer buf
              (when dbgp-filter-defer-flag
@@ -788,7 +788,7 @@ takes over the filter."
                      dbgp-filter-pending-text (if dbgp-filter-pending-text
                                                   (concat dbgp-filter-pending-text string)
                                                 string))
-               (return-from dbgp-session-filter))
+               (cl-return-from dbgp-session-filter))
 
              ;; If we have to ask a question during the processing,
              ;; defer any additional text that comes from the debugger

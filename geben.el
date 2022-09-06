@@ -137,7 +137,7 @@ Typically `pop-to-buffer' or `switch-to-buffer'."
    (t
     (let ((candidates (make-vector 3 nil))
           (dynamic-p (geben-dbgp-dynamic-property-bufferp buf)))
-      (block finder
+      (cl-block finder
              (walk-windows (lambda (window)
                              (if (geben-dbgp-dynamic-property-bufferp (window-buffer window))
                                  (if dynamic-p
@@ -146,7 +146,7 @@ Typically `pop-to-buffer' or `switch-to-buffer'."
                                (if (eq (selected-window) window)
                                    (aset candidates 2 window)
                                  (aset candidates 0 window)
-                                 (return-from finder))))))
+                                 (cl-return-from finder))))))
       (select-window (or (aref candidates 0)
                          (aref candidates 1)
                          (aref candidates 2)
@@ -161,10 +161,10 @@ Typically `pop-to-buffer' or `switch-to-buffer'."
 
 (defun geben-dbgp-dynamic-property-buffer-visiblep ()
   "Check whether any window displays any property buffer."
-  (block walk-loop
+  (cl-block walk-loop
          (walk-windows (lambda (window)
                          (if (geben-dbgp-dynamic-property-bufferp (window-buffer window))
-                           (return-from walk-loop t))))))
+                           (cl-return-from walk-loop t))))))
 
 
 ;;==============================================================
@@ -483,7 +483,7 @@ at the entry line of the script."
   "Get transaction id for next command."
   (prog1
       (geben-session-tid session)
-    (incf (geben-session-tid session))))
+    (cl-incf (geben-session-tid session))))
 
 ;; buffer
 
@@ -790,7 +790,7 @@ Return a cmd list."
             nil)
            (t
             (let ((value (car (last prop))))
-              (assert (stringp value))
+              (cl-assert (stringp value))
               (when (string= "base64" (xml-get-attribute prop 'encoding))
                 (setq value (base64-decode-string value)))
               (if (string= "string" type)
@@ -915,7 +915,7 @@ A source object forms a property list with three properties
         path))))
 
 (defun geben-source-default-file-name (session)
-  (case (geben-session-language session)
+  (cl-case (geben-session-language session)
     (:php "index.php")
     (:python "index.py")
     (:perl "index.pl")
@@ -999,10 +999,10 @@ A source object forms a property list with three properties
 
 (defsubst geben-session-source-fileuri (session local-path)
   "Find a known fileuri that counters to LOCAL-PATH."
-  (block geben-session-souce-fileuri
+  (cl-block geben-session-souce-fileuri
     (maphash (lambda (fileuri path)
                (and (equal local-path (plist-get path :local-path))
-                    (return-from geben-session-souce-fileuri fileuri)))
+                    (cl-return-from geben-session-souce-fileuri fileuri)))
              (geben-session-source session))))
 
 (defsubst geben-session-source-content-coding-system (session content)
@@ -1247,7 +1247,7 @@ debugging is finished."
 
 (defun geben-bp-make (session type &rest params)
   "Create a new line breakpoint object."
-  (assert (geben-session-p session))
+  (cl-assert (geben-session-p session))
   (let ((bp (append (list :type type) params)))
     ;; force :lineno and :hit-value value to be integer.
     (mapc (lambda (prop)
@@ -1452,7 +1452,7 @@ id-or-obj should be either a breakpoint id or a breakpoint object."
                    (plist-get type-rank (plist-get b :type))))
       (if (not (zerop cmp))
           (< cmp 0)
-        (case (plist-get a :type)
+        (cl-case (plist-get a :type)
           (:line
            (setq ax (plist-get a :fileuri))
            (setq bx (plist-get b :fileuri))
@@ -1670,7 +1670,7 @@ Key mapping and other information is described its help page."
           (mapc (lambda (bp)
                   (insert "  ")
                   (insert (format "%-11s"
-                                  (or (case (plist-get bp :type)
+                                  (or (cl-case (plist-get bp :type)
                                         (:line "Line")
                                         (:exception "Exception")
                                         (:call "Call")
@@ -1760,7 +1760,7 @@ With this callback GEBEN tracks displacements of line breakpoints."
           (while (and (looking-at "[ \t]*$")
                       (< lineno lineno-to))
             (forward-line)
-            (incf lineno))
+            (cl-incf lineno))
           (if (< lineno-from lineno)
               (plist-put (overlay-get overlay 'bp) :lineno lineno))
           (goto-line lineno)
@@ -2712,7 +2712,7 @@ The buffer commands are:
 
 (defun geben-dbgp-handle-stream (session msg)
   "Handle a stream message."
-  (let ((type (case (intern-soft (xml-get-attribute msg 'type))
+  (let ((type (cl-case (intern-soft (xml-get-attribute msg 'type))
                 ('stdout :stdout)
                 ('stderr :stderr)))
         (encoding (xml-get-attribute msg 'encoding))
@@ -2746,7 +2746,7 @@ The buffer commands are:
 (defun geben-dbgp-response-stdout (session cmd msg)
   "A response message handler for `stdout' command."
   (setf (geben-redirect-stdout (geben-session-redirect session))
-        (case (geben-cmd-param-get cmd "-c")
+        (cl-case (geben-cmd-param-get cmd "-c")
           (0 nil)
           (1 :redirect)
           (2 :intercept))))
@@ -2760,7 +2760,7 @@ The buffer commands are:
 (defun geben-dbgp-response-stderr (session cmd msg)
   "A response message handler for `stderr' command."
   (setf (geben-redirect-stderr (geben-session-redirect session))
-        (case (geben-cmd-param-get cmd "-c")
+        (cl-case (geben-cmd-param-get cmd "-c")
           (0 nil)
           (1 :redirect)
           (2 :intercept))))
@@ -2954,7 +2954,7 @@ of the function is passed to feature_set DBGp command."
       (let ((method (car entry))
             (name (symbol-name (nth 1 entry)))
             (param (nth 2 entry)))
-        (case method
+        (cl-case method
               (:set
                (let ((value (cond
                              ((null param) nil)
@@ -3148,7 +3148,7 @@ This value remains the last step command type either
   "Do either `geben-step-into' or `geben-step-over' what the last time called.
 Default is `geben-step-into'."
   (interactive)
-  (case geben-step-type
+  (cl-case geben-step-type
     (:step-over (geben-step-over))
     (:step-into (geben-step-into))
     (t (geben-step-into))))
@@ -3510,7 +3510,7 @@ This command enables you to redirect the debuggee script's output to GEBEN.
 You can select redirection target from \`stdout', \`stderr' and both of them.
 Prefixed with \\[universal-argument], you can also select redirection mode
 from \`redirect', \`intercept' and \`disabled'."
-  (interactive (list (case (read-char "Redirect: o)STDOUT e)STRERR b)Both")
+  (interactive (list (cl-case (read-char "Redirect: o)STDOUT e)STRERR b)Both")
                        (?o :stdout)
                        (?e :stderr)
                        (?b :both))
@@ -3518,7 +3518,7 @@ from \`redirect', \`intercept' and \`disabled'."
   (unless target
     (error "Cancelled"))
   (let ((mode (if arg
-                  (case (read-char "Mode: r)Redirect i)Intercept d)Disable")
+                  (cl-case (read-char "Mode: r)Redirect i)Intercept d)Disable")
                     (?r :redirect)
                     (?i :intercept)
                     (?d :disable))
@@ -3607,7 +3607,7 @@ In the debugging session the source code buffers are under the
 minor mode  `geben-mode'. Key mapping and other information is
 described its help page."
   (interactive "p")
-  (case args
+  (cl-case args
     (1
      (geben-dbgp-start geben-dbgp-default-port))
     (4
