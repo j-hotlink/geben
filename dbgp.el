@@ -246,6 +246,9 @@ Used when no ip address defined by dbgp-listener-ip-address.")
   "The ip address on which to listen, given as an ipv4 array.
 Eg: [192 168 0 1].  If nil, the ip address of dbgp-listener-interface is used")
 
+(defvar dbgp-start-hook nil
+  "Hook for initialising any customised dbgp variables.")
+
 ;;--------------------------------------------------------------
 ;; interactive read functions
 ;;--------------------------------------------------------------
@@ -367,6 +370,7 @@ Result is suitable for 'make-network-process' :local argument"
 ;;;###autoload
 (defun dbgp-exec (port &rest session-params)
   "Start a new DBGp listener listening to PORT."
+  (run-hooks 'dbgp-start-hook)
   (if (dbgp-listener-alive-p port)
       (cons (dbgp-listener-find port)
             (format "The DBGp listener for %d has already been started." port))
