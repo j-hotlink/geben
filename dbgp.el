@@ -40,7 +40,7 @@
     (error (concat "geben.el: This package requires Emacs 22.1 or later."))))
 
 (eval-and-compile
-  (require 'cl)
+  (require 'cl-lib)
   (require 'xml))
 
 (require 'comint)
