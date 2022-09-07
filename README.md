@@ -28,6 +28,6 @@ Simplest deployment is to clone under ~/.emacs.d/geben in place of the melpa geb
     ```lisp
        (add-hook 'dbgp-start-hook
           (lambda ()
-            (set (dbgp-listener-interface "eth0"))
-            (set (dbgp-listener-ipv4address [192 168 0 1]))))
+            (setq dbgp-listener-interface "eth0")
+            (setq dbgp-listener-ipv4address [192 168 0 1])))
     ```
