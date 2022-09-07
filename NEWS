@@ -1,3 +1,13 @@
+Version 0.28 (2022-09-06)
+
+  * new config options for listener:
+    - `dbgp-start-hook', to apply configuration before session start
+    - `dbgp-listener-interface` to specify a network interface from which to obtain ip
+    - `dbgp-listener-ipv4address' to specify an ip explicitly
+    - functions to detect ip when no configuration given
+  * improved:
+    - removed obsolete aliases and updates 'cl to 'cl-lib
+
 Version 0.27 (2020-11-16)
 
   * improved:

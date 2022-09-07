@@ -1,9 +1,17 @@
+2022-09-06  jdoull  <jdoull@hotlink.technology>
+
+        * [FIX] remove obsolete aliases for Emacs 27 & 28
+        * [ADD] detect and use local ip address for listening at startup, to support
+                newer `make-network-process` signature
+        * [ADD] hook `dbgp-start-hook` with variables `dbgp-listener-interface`
+                and `dbgp-listener-ipv4address` to optionally configuring listener
+
 2020-11-16  jdoull  <jdoull@hotlink.technology>
 
-	* [FIX] xdebug returns incorrect numchildren for $GLOBALS
-	* [ADD] unicode support for dbgp-session-response-to-chunk
-	* [FIX] parameter make-network-process :nowait t for emacs > 26
-	* [CHG] standardise whitespace with spaces
+        * [FIX] xdebug returns incorrect numchildren for $GLOBALS
+        * [ADD] unicode support for dbgp-session-response-to-chunk
+        * [FIX] parameter make-network-process :nowait t for emacs > 26
+        * [CHG] standardise whitespace with spaces
 
 2010-03-29  reedom  <fujinaka.tohru@gmail.com>
 
