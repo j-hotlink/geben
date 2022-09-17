@@ -221,7 +221,7 @@ If POS is omitted, then the current position is used."
 (defmacro geben-lexical-bind (bindings &rest body)
   (declare (indent 1)
            (debug (sexp &rest form)))
-  (cl-macroexpand-all
+  (macroexpand-all
    (nconc
     (list 'lexical-let (mapcar (lambda (arg)
                                  (list arg arg))
@@ -278,17 +278,17 @@ If POS is omitted, then the current position is used."
 ;; DBGp related utilities
 ;;==============================================================
 
-(defmacro* geben-dbgp-sequence (cmd &rest callback)
+(cl-defmacro geben-dbgp-sequence (cmd &rest callback)
   (declare (indent 1)
            (debug (form &rest form)))
   (list 'progn
         (list 'geben-plist-append cmd
               :callback (car callback))))
 
-(defmacro* geben-dbgp-sequence-bind (bindings cmd callback)
+(cl-defmacro geben-dbgp-sequence-bind (bindings cmd callback)
   (declare (indent 1)
            (debug (sexp form lambda-expr)))
-  (cl-macroexpand-all
+  (macroexpand-all
    (list 'progn
          (list 'geben-plist-append cmd
                :callback (if bindings
@@ -377,9 +377,9 @@ at the entry line of the script."
   :group 'geben
   :type 'boolean)
 
-(defstruct (geben-session
-            (:constructor nil)
-            (:constructor geben-session-make))
+(cl-defstruct (geben-session
+               (:constructor nil)
+               (:constructor geben-session-make))
   "Represent a DBGp protocol connection session."
   storage
   process
@@ -403,7 +403,7 @@ at the entry line of the script."
 (defmacro geben-with-current-session (binding &rest body)
   (declare (indent 1)
            (debug (symbolp &rest form)))
-  (cl-macroexpand-all
+  (macroexpand-all
    `(let ((,binding geben-current-session))
       (when ,binding
         ,@body))))
@@ -434,7 +434,7 @@ at the entry line of the script."
                             :addr (xml-get-attribute initmsg 'hostname)
                             :idekey (xml-get-attribute initmsg 'idekey))
                     (list :proxy nil
-                          :port (second (process-contact listener))))))
+                          :port (cadr (process-contact listener))))))
     (nconc storage (list :language (geben-session-language session)
                          :fileuri (xml-get-attribute initmsg 'fileuri)))
     (add-to-list 'geben-storages storage)
@@ -451,18 +451,18 @@ at the entry line of the script."
          (process (geben-session-process session))
          (listener (dbgp-plist-get process :listener))
          (proxy-p (dbgp-proxy-p listener))
-         (port (second (process-contact listener))))
-    (find-if (lambda (storage)
-               (and (eq (not proxy-p)
-                        (not (plist-get storage :proxy)))
-                    (eq (geben-session-language session)
-                        (plist-get storage :language))
-                    (equal fileuri (plist-get storage :fileuri))
-                    (if proxy-p
-                        (and (equal addr (plist-get storage :addr))
-                             (equal idekey (plist-get storage :idekey)))
-                      (eq port (plist-get storage :port)))))
-             geben-storages)))
+         (port (cadr (process-contact listener))))
+    (cl-find-if (lambda (storage)
+                  (and (eq (not proxy-p)
+                           (not (plist-get storage :proxy)))
+                       (eq (geben-session-language session)
+                           (plist-get storage :language))
+                       (equal fileuri (plist-get storage :fileuri))
+                       (if proxy-p
+                           (and (equal addr (plist-get storage :addr))
+                                (equal idekey (plist-get storage :idekey)))
+                         (eq port (plist-get storage :port)))))
+                geben-storages)))
 
 (defsubst geben-session-release (session)
   "Initialize a session of a process PROC."
@@ -519,7 +519,7 @@ at the entry line of the script."
   "Setup temporary directory."
   (let* ((proc (geben-session-process session))
          (gebendir (file-truename geben-temporary-file-directory))
-         (leafdir (format "%d" (second (process-contact proc))))
+         (leafdir (format "%d" (cadr (process-contact proc))))
          (tempdir (expand-file-name leafdir gebendir)))
     (unless (file-directory-p gebendir)
       (make-directory gebendir t)
@@ -612,7 +612,7 @@ For a DBGp command \`stack_get -i 1 -d 2\',
           (setf (geben-session-cmd session) (cdr cmds)))
       (let (match-cmd)
         (setf (geben-session-cmd session)
-              (remove-if (lambda (cmd)
+              (cl-remove-if (lambda (cmd)
                            (and (eq tid (plist-get cmd :tid))
                                 (setq match-cmd cmd)))
                          cmds))
@@ -924,11 +924,11 @@ A source object forms a property list with three properties
 
 (defun geben-source-find-session (temp-path)
   "Find a session which may have a file at TEMP-PATH in its temporary directory tree."
-  (find-if (lambda (session)
-             (let ((tempdir (geben-session-tempdir session)))
-               (ignore-errors
-                 (string= tempdir (substring temp-path 0 (length tempdir))))))
-           geben-sessions))
+  (cl-find-if (lambda (session)
+                (let ((tempdir (geben-session-tempdir session)))
+                  (ignore-errors
+                    (string= tempdir (substring temp-path 0 (length tempdir))))))
+              geben-sessions))
 
 (defun geben-source-visit (local-path)
   "Visit to a local source code file."
@@ -954,7 +954,7 @@ A source object forms a property list with three properties
   (let* ((storage (geben-session-storage session))
          (list (plist-get storage :source)))
     (if (and (string-match "^file:/" fileuri)
-             (not (find list fileuri :test #'equal)))
+             (not (cl-find list fileuri :test #'equal)))
         (if list
             (nconc list (list fileuri))
           (plist-put storage :source (list fileuri))))))
@@ -1044,7 +1044,7 @@ FILEURI is a uri of the target file of a debuggee site."
   (let* ((fileuri (geben-cmd-param-get cmd "-f"))
          (local-path (geben-source-local-path session fileuri)))
     (when local-path
-      (geben-session-source-add session fileuri local-path (base64-decode-string (third msg)))
+      (geben-session-source-add session fileuri local-path (base64-decode-string (caddr msg)))
       (geben-source-visit local-path))))
 
 (defun geben-dbgp-source-fetch (session fileuri)
@@ -1207,9 +1207,9 @@ will be displayed in a window."
 ;; breakpoints
 ;;==============================================================
 
-(defstruct (geben-breakpoint
-            (:constructor nil)
-            (:constructor geben-breakpoint-make))
+(cl-defstruct (geben-breakpoint
+               (:constructor nil)
+               (:constructor geben-breakpoint-make))
   "Breakpoint setting.
 
 types:
@@ -1302,7 +1302,7 @@ debugging is finished."
 (defun geben-session-breakpoint-storage-add (session bp)
   (let* ((storage (geben-session-storage session))
          (list (plist-get storage :bp)))
-    (unless (find bp list :test #'geben-bp=)
+    (unless (cl-find bp list :test #'geben-bp=)
       (let ((bp-copy (copy-sequence bp)))
         (plist-put bp-copy :overlay nil)
         (if list
@@ -1312,8 +1312,8 @@ debugging is finished."
 (defun geben-session-breakpoint-storage-remove (session bp)
   (let* ((storage (geben-session-storage session))
          (list (plist-get storage :bp)))
-    (when (find bp list :test #'geben-bp=)
-      (plist-put storage :bp (delete* bp list :test #'geben-bp=)))))
+    (when (cl-find bp list :test #'geben-bp=)
+      (plist-put storage :bp (cl-delete bp list :test #'geben-bp=)))))
 
 (defun geben-session-breakpoint-storage-restore (session)
   (let ((storage (geben-session-storage session))
@@ -1336,7 +1336,7 @@ debugging is finished."
 (defun geben-session-breakpoint-remove (session id-or-obj)
   "Remove breakpoints having specific breakpoint id or same meaning objects."
   (setf (geben-breakpoint-list (geben-session-breakpoint session))
-        (remove-if (if (stringp id-or-obj)
+        (cl-remove-if (if (stringp id-or-obj)
                        (lambda (bp)
                          (when (string= (plist-get bp :id) id-or-obj)
                            (geben-session-breakpoint-storage-remove session bp)
@@ -1350,7 +1350,7 @@ debugging is finished."
 (defun geben-session-breakpoint-find (session id-or-obj)
   "Find a breakpoint.
 id-or-obj should be either a breakpoint id or a breakpoint object."
-  (find-if
+  (cl-find-if
    (if (stringp id-or-obj)
        (lambda (bp)
          (string= (plist-get bp :id) id-or-obj))
@@ -1401,9 +1401,9 @@ id-or-obj should be either a breakpoint id or a breakpoint object."
               (when err
                 (geben-session-breakpoint-remove session bid))))
         (setf (geben-breakpoint-list (geben-session-breakpoint session))
-              (delete-if (lambda (bp1)
-                           (geben-bp= bp bp1))
-                         (geben-breakpoint-list (geben-session-breakpoint session))))))))
+              (cl-delete-if (lambda (bp1)
+                              (geben-bp= bp bp1))
+                            (geben-breakpoint-list (geben-session-breakpoint session))))))))
 
 (defun geben-breakpoint-clear (session)
   "Clear all breakpoints."
@@ -1412,7 +1412,7 @@ id-or-obj should be either a breakpoint id or a breakpoint object."
 
 (defun geben-breakpoint-find-at-pos (session buf pos)
   (with-current-buffer buf
-    (remove-if 'null
+    (cl-remove-if 'null
                (mapcar (lambda (overlay)
                          (let ((bp (overlay-get overlay 'bp)))
                            (and (eq :line (plist-get bp :type))
@@ -1665,7 +1665,7 @@ Key mapping and other information is described its help page."
         (if (or (not (listp breakpoints))
                 (zerop (length breakpoints)))
             (insert "No breakpoints.\n")
-          (setq breakpoints (sort (copy-list breakpoints)
+          (setq breakpoints (sort (cl-copy-list breakpoints)
                                   #'geben-breakpoint-sort-pred))
           (mapc (lambda (bp)
                   (insert "  ")
@@ -1983,7 +1983,7 @@ the file."
   "Face used to highlight numeric value."
   :group 'geben-highlighting-faces)
 
-(defstruct (geben-context
+(cl-defstruct (geben-context
             (:constructor nil)
             (:constructor geben-context-make))
   names           ; context names alist(KEY: context name, VALUE: context id)
@@ -2641,9 +2641,9 @@ The buffer commands are:
 (defconst geben-redirect-stderr-buffer-name "*GEBEN<%s> stderr*"
   "Name for the debuggee script's STDERR redirection buffer.")
 
-(defstruct (geben-redirect
-            (:constructor nil)
-            (:constructor geben-redirect-make))
+(cl-defstruct (geben-redirect
+               (:constructor nil)
+               (:constructor geben-redirect-make))
   (stdout :redirect)
   (stderr :redirect)
   (combine t)
@@ -2784,7 +2784,7 @@ The buffer commands are:
           (message "Waiting for debug server to connect at port %s." port)))
     (error
      (beep)
-     (read-char (format "[port %s] %s" port (second error-sexp))
+     (read-char (format "[port %s] %s" port (cadr error-sexp))
                 nil 3))))
 
 (defun geben-dbgp-start-proxy (ip-or-addr port idekey ;;multi-session-p
@@ -2805,7 +2805,7 @@ The buffer commands are:
     (error
      (beep)
      (read-char (format "[proxy %s:%s-%s] %s"
-                        ip-or-addr port idekey (second error-sexp))
+                        ip-or-addr port idekey (cadr error-sexp))
                 nil 3))))
 
 (defun geben-dbgp-session-accept-p (proc)
@@ -2817,11 +2817,11 @@ The buffer commands are:
          (if (dbgp-proxy-p proc)
              (let ((proxy (dbgp-plist-get proc :proxy)))
                (or (plist-get proxy :multi-session)
-                   (not (some (lambda (session)
+                   (not (cl-some (lambda (session)
                                 (eq proxy (dbgp-plist-get proc :proxy)))
                               geben-sessions))))
            (let ((port (dbgp-port-get (dbgp-listener-get proc))))
-             (not (some (lambda (session)
+             (not (cl-some (lambda (session)
                           (let ((oproc (geben-session-process session)))
                             (and oproc
                                  (not (dbgp-proxy-p oproc))
@@ -3086,7 +3086,9 @@ If non-nil, GEBEN will query the user before removing all breakpoints."
   "Minor mode for debugging source code with GEBEN.
 The geben-mode buffer commands:
 \\{geben-mode-map}"
-  nil " *debugging*" geben-mode-map
+  :init-value nil
+  :lighter " *debugging*"
+  :keymap geben-mode-map
   (setq buffer-read-only geben-mode)
   (setq left-margin-width (if geben-mode 2 0))
   ;; when the buffer is visible in a window,
@@ -3122,7 +3124,7 @@ The geben-mode buffer commands:
   (interactive)
   (geben-with-current-session session
     (if (geben-session-stack session)
-        (let* ((stack (second (car (geben-session-stack session))))
+        (let* ((stack (cadr (car (geben-session-stack session))))
                (fileuri (geben-source-fileuri-regularize (cdr (assq 'filename stack))))
                (lineno (cdr (assq 'lineno stack))))
           (geben-session-cursor-update session fileuri lineno))
@@ -3243,8 +3245,8 @@ hit-value interactively.
                                     (lambda (x)
                                       (cdr x))
                                     candidates " "))))
-             (x (find-if (lambda (x)
-                           (eq c (elt (cdr x) 0)))
+             (x (cl-find-if (lambda (x)
+                              (eq c (elt (cdr x) 0)))
                          candidates))
              (fn (and x
                       (intern-soft (concat "geben-set-breakpoint-"
@@ -3629,7 +3631,7 @@ described its help page."
    (let ((ports (remq nil
                       (mapcar (lambda (listener)
                                 (and (not (dbgp-proxy-p listener))
-                                     (number-to-string (second (process-contact listener)))))
+                                     (number-to-string (cadr (process-contact listener)))))
                               dbgp-listeners))))
      (list
       (if (= 1 (length ports))

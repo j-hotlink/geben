@@ -141,10 +141,10 @@ to connect to DBGp listener of this address."
   )
 
 (defsubst dbgp-ip-get (proc)
-  (first (process-contact proc)))
+  (car (process-contact proc)))
 
 (defsubst dbgp-port-get (proc)
-  (second (process-contact proc)))
+  (cadr (process-contact proc)))
 
 (defsubst dbgp-proxy-p (proc)
   (and (dbgp-plist-get proc :proxy)
@@ -269,7 +269,7 @@ Fourth arg DEFAULT-VALUE is the default value.  If non-nil, it is used
 "
   (let (str
         (temp-history (and history
-                           (copy-list (symbol-value history)))))
+                           (cl-copy-list (symbol-value history)))))
     (while
         (progn
           (setq str (read-string prompt initial-input 'temp-history default-value))
@@ -314,8 +314,8 @@ See `read-from-minibuffer' for details of HISTORY argument."
 ;;--------------------------------------------------------------
 
 (defsubst dbgp-listener-find (port)
-  (find-if (lambda (listener)
-             (eq port (second (process-contact listener))))
+  (cl-find-if (lambda (listener)
+             (eq port (cadr (process-contact listener))))
            dbgp-listeners))
 
 ;;;###autoload
@@ -402,7 +402,7 @@ Result is suitable for 'make-network-process' :local argument"
                       (mapcar (lambda (listener)
                                 (and (or current-prefix-arg
                                          (not (dbgp-proxy-p listener)))
-                                     (number-to-string (second (process-contact listener)))))
+                                     (number-to-string (cadr (process-contact listener)))))
                               dbgp-listeners))))
      (list
       ;; ask user for the target idekey.
@@ -470,7 +470,7 @@ This create a new DBGp listener and register it to the proxy
 associating with the IDEKEY."
   (cl-block dbgp-proxy-register-exec
     ;; check whether the proxy listener already exists
-    (let ((listener (find-if (lambda (listener)
+    (let ((listener (cl-find-if (lambda (listener)
                                (let ((proxy (dbgp-proxy-get listener)))
                                  (and proxy
                                       (equal ip-or-addr (plist-get proxy :addr))
@@ -492,7 +492,7 @@ associating with the IDEKEY."
                                                 :noquery t
                                                 :filter 'dbgp-comint-setup
                                                 :sentinel 'dbgp-listener-sentinel))
-           (listener-port (second (process-contact listener-proc)))
+           (listener-port (cadr (process-contact listener-proc)))
            (result (dbgp-proxy-send-command ip-or-addr port
                                             (format "proxyinit -a %s:%s -k %s -m %d"
                                                     dbgp-local-address listener-port idekey
@@ -557,7 +557,7 @@ After unregistration, it kills the listener instance."
                                    (and (eq 1 (length idekeys))
                                         (car idekeys))))
      ;; filter proxies and leave ones having the selected ideky.
-     (setq proxies (remove-if (lambda (proxy)
+     (setq proxies (cl-remove-if (lambda (proxy)
                                 (not (equal idekey (plist-get (dbgp-proxy-get proxy) :idekey))))
                               proxies))
      (let ((proxy (if (= 1 (length proxies))
@@ -570,7 +570,7 @@ After unregistration, it kills the listener instance."
                                               (format "%s:%s" (plist-get prop :addr) (plist-get prop :port))))
                                           proxies))
                            (addr (completing-read "Proxy candidates: " addrs nil t (car addrs)))
-                           (pos (position addr addrs)))
+                           (pos (cl-position addr addrs)))
                       (and pos
                            (nth pos proxies))))))
        (list idekey
@@ -730,9 +730,9 @@ takes over the filter."
 
     (let* ((listener (dbgp-listener-get proc))
            (buffer-name (format "DBGp <%s:%s>"
-                                (first (process-contact proc))
-                                (second (process-contact listener))))
-           (buf (or (find-if (lambda (buf)
+                                (car (process-contact proc))
+                                (cadr (process-contact listener))))
+           (buf (or (cl-find-if (lambda (buf)
                                ;; find reusable buffer
                                (let ((proc (get-buffer-process buf)))
                                  (and (buffer-local-value 'dbgp-buffer-process buf)
