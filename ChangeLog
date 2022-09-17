@@ -1,3 +1,9 @@
+2022-09-16  jdoull  <jdoull@hotlink.technology>
+
+        * [NEW] support new Emacs define-minor-mode signature
+        * [FIX] full code sweep to fix all deprecated cl.el aliases
+        * [FIX] port required lexical-let macros from cl.el
+
 2022-09-06  jdoull  <jdoull@hotlink.technology>
 
         * [FIX] remove obsolete aliases for Emacs 27 & 28
@@ -51,12 +57,12 @@
         * [ADD] Add a new command `geben-eval-current-word'.
 
 2009-02-25  reedom  <fujinaka.tohru@gmail.com>
-        
+
         * [FIX] With HTTP server running on Windows GEBEN failed to
                 create script file copies.
         * [FIX] Now `eval' command works against PHP(Xdebug) same as
                 before.
-        
+
 2009-02-07  reedom  <fujinaka.tohru@gmail.com>
 
         * [FIX] Suppressed unwanted focus changing: when the context
@@ -69,18 +75,18 @@
         * [FIX] Bug in Makefile: cannot byte-compile geben.el if the
                 working directory is not one of the Emacs' default
                 directories.
-        
+
 2009-01-10  reedom  <fujinaka.tohru@gmail.com>
 
         * [FIX] Implemented `geben-quit-window'
         * [FIX] Type mismatch error was occurred in breakpoint list mode
                 when any breakpoint deletion was executed.
-        
+
 2009-01-08  reedom  <fujinaka.tohru@gmail.com>
 
         * [CHG] Redesigned.
         * [CHG] Make not to require an external DBGp client program.
-        
+
 2008-11-06  reedom  <fujinaka.tohru@gmail.com>
 
         * [FIX] When setting breakpoint which needed fileuri against
@@ -89,7 +95,7 @@
         * [FIX] Once debugger engine passed invalid fileuri, which
                 have http:// scheme instead of file://, GEBEN made
                 Emacs raise exceptions at exitting Emacs.
-        
+
 2008-11-04  reedom  <fujinaka.tohru@gmail.com>
 
         * [ADD] Added Makefile.
@@ -97,13 +103,13 @@
                 description and key bindings of GEBEN's each mode.
         * [CHG] Face definition: `geben-backtrace-fileuri'
         * [CHG] Face definition: `geben-breakpoint-face'
-        
+
 2008-11-01  reedom  <fujinaka.tohru@gmail.com>
 
         * [CHG] Dropped Emacs 21.4 due to use tree-widget.el for the
                 context buffer.
         * [ADD] New command `geben-display-context and related commands.
-        
+
 2008-10-29  reedom  <fujinaka.tohru@gmail.com>
 
         * [CHG] Renamed `ogeben-debug-target-remotep'
