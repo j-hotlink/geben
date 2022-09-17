@@ -218,6 +218,104 @@ If POS is omitted, then the current position is used."
        (error "geben-plist-add: cannot add value; type of prop `%s' is not `list' but `%s'."
               ,prop (type-of ,value))))))
 
+;;
+;;  start: port from cl.el
+;;
+(defvar cl-closure-vars nil)
+(defvar cl--function-convert-cache nil)
+
+(defun cl--function-convert (f)
+  "Special macro-expander for special cases of (function F).
+The two cases that are handled are:
+- closure-conversion of lambda expressions for `lexical-let'.
+- renaming of F when it's a function defined via `cl-labels' or `labels'."
+  (require 'cl-macs)
+  (declare-function cl--expr-contains-any "cl-macs" (x y))
+  (declare-function cl--labels-convert "cl-macs" (f))
+  (defvar cl--labels-convert-cache)
+  (cond
+   ;; ¡¡Big Ugly Hack!! We can't use a compiler-macro because those are checked
+   ;; *after* handling `function', but we want to stop macroexpansion from
+   ;; being applied infinitely, so we use a cache to return the exact `form'
+   ;; being expanded even though we don't receive it.
+   ((eq f (car cl--function-convert-cache)) (cdr cl--function-convert-cache))
+   ((eq (car-safe f) 'lambda)
+    (let ((body (mapcar (lambda (f)
+                          (macroexpand-all f macroexpand-all-environment))
+                        (cddr f))))
+      (if (and cl-closure-vars
+               (cl--expr-contains-any body cl-closure-vars))
+          (let* ((new (mapcar 'cl-gensym cl-closure-vars))
+                 (sub (cl-pairlis cl-closure-vars new)) (decls nil))
+            (while (or (stringp (car body))
+                       (eq (car-safe (car body)) 'interactive))
+              (push (list 'quote (pop body)) decls))
+            (put (car (last cl-closure-vars)) 'used t)
+            `(list 'lambda '(&rest --cl-rest--)
+                   ,@(cl-sublis sub (nreverse decls))
+                   (list 'apply
+                         (list 'function
+                               #'(lambda ,(append new (cadr f))
+                                   ,@(cl-sublis sub body)))
+                         ,@(nconc (mapcar (lambda (x) `(list 'quote ,x))
+                                          cl-closure-vars)
+                                  '((quote --cl-rest--))))))
+        (let* ((newf `(lambda ,(cadr f) ,@body))
+               (res `(function ,newf)))
+          (setq cl--function-convert-cache (cons newf res))
+          res))))
+   (t
+    (cl--labels-convert f))))
+
+(defmacro lexical-let (bindings &rest body)
+  "Like `let', but lexically scoped.
+The main visible difference is that lambdas inside BODY will create
+lexical closures as in Common Lisp.
+\n(fn BINDINGS BODY)"
+  (declare (indent 1) (debug let))
+  (let* ((cl-closure-vars cl-closure-vars)
+	 (vars (mapcar (function
+			(lambda (x)
+			  (or (consp x) (setq x (list x)))
+			  (push (make-symbol (format "--cl-%s--" (car x)))
+				cl-closure-vars)
+			  (set (car cl-closure-vars) [bad-lexical-ref])
+			  (list (car x) (cadr x) (car cl-closure-vars))))
+		       bindings))
+	 (ebody
+	  (macroexpand-all
+           `(cl-symbol-macrolet
+                ,(mapcar (lambda (x)
+                           `(,(car x) (symbol-value ,(nth 2 x))))
+                         vars)
+              ,@body)
+	   (cons (cons 'function #'cl--function-convert)
+                 macroexpand-all-environment))))
+    (if (not (get (car (last cl-closure-vars)) 'used))
+        ;; Turn (let ((foo (cl-gensym)))
+        ;;        (set foo <val>) ...(symbol-value foo)...)
+        ;; into (let ((foo <val>)) ...(symbol-value 'foo)...).
+        ;; This is good because it's more efficient but it only works with
+        ;; dynamic scoping, since with lexical scoping we'd need
+        ;; (let ((foo <val>)) ...foo...).
+	`(progn
+           ,@(mapcar (lambda (x) `(defvar ,(nth 2 x))) vars)
+           (let ,(mapcar (lambda (x) (list (nth 2 x) (nth 1 x))) vars)
+           ,(cl-sublis (mapcar (lambda (x)
+                              (cons (nth 2 x)
+                                    `',(nth 2 x)))
+                            vars)
+                    ebody)))
+      `(let ,(mapcar (lambda (x)
+                       (list (nth 2 x)
+                             `(make-symbol ,(format "--%s--" (car x)))))
+                     vars)
+         (setf ,@(apply #'append
+                        (mapcar (lambda (x)
+                                  (list `(symbol-value ,(nth 2 x)) (nth 1 x)))
+                                vars)))
+         ,ebody))))
+
 (defmacro geben-lexical-bind (bindings &rest body)
   (declare (indent 1)
            (debug (sexp &rest form)))
@@ -227,6 +325,10 @@ If POS is omitted, then the current position is used."
                                  (list arg arg))
                                bindings))
     body)))
+
+;;
+;;  end: port from cl.el
+;;
 
 (defun geben-remove-directory-tree (basedir)
   (ignore-errors
