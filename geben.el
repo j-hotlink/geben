@@ -434,7 +434,7 @@ lexical closures as in Common Lisp.
   (let ((storage-path (expand-file-name ".storage"
                                         geben-temporary-file-directory)))
     (with-temp-buffer
-      (pp geben-storages (current-buffer))
+      (princ geben-storages (current-buffer))
       (with-temp-message ""
         (write-region (point-min) (point-max) storage-path)))))
 
