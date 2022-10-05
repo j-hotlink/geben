@@ -34,12 +34,15 @@ Example .emacs setup
     (global-set-key (kbd "C-x #") 'geben-end)
 ```
     
+## 0.30
 
-## Changes 0.28 from 0.29
+* Fix geben ungraceful quit with storage corruption, and unreliable restart (removed pp)
+
+## 0.29
 
 * Code sweep to complete full Emacs 28 compatibility (including decouple all deprecated cl.el)
 
-## Changes 0.27 from 0.28
+## 0.28
 
 * Emacs 27 / 28 compatible (removed obsolete function aliases and warnings)
 * Support for newer `make-network-process` signature:

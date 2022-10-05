@@ -1,3 +1,11 @@
+Version 0.30 (2022-09-28)
+
+  * fix geben error corrupting storage during quit (pp failure)
+
+Version 0.29 (2022-09-16)
+
+  * resolve all deprecated cl aliases
+
 Version 0.28 (2022-09-06)
 
   * new config options for listener:
