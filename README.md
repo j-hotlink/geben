@@ -11,7 +11,7 @@ The original README file remains useful if you've never used geben.
 
 At time of writing, the code has been actively used with:
 
-* Emacs 26, 28
+* Emacs 26, 28, 29
 * Xdebug 2 and 3.
 * PHP `5.*`, `7.*`, `8.*`
 
