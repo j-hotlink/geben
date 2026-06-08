@@ -3,8 +3,8 @@
 ;;
 ;; Filename: geben.el
 ;; Author: reedom <fujinaka.tohru@gmail.com>
-;; Maintainer: reedom <fujinaka.tohru@gmail.com>
-;; Version: 0.26
+;; Maintainer: jdoull <jonathan@hotlink.technology>
+;; Version: 0.31
 ;; URL: http://code.google.com/p/geben-on-emacs/
 ;; Keywords: DBGp, debugger, PHP, Xdebug, Perl, Python, Ruby, Tcl, Komodo
 ;; Compatibility: Emacs 22.1
@@ -870,7 +870,7 @@ Return a cmd list."
   (geben-dbgp-send-command
    session
    "eval"
-   (format "-- {%s}" (base64-encode-string exp))))
+   (format "-- %s" (base64-encode-string exp))))
 
 (defun geben-dbgp-response-eval (session cmd msg)
   "A response message handler for \`eval\' command."

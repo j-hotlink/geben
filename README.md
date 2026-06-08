@@ -1,4 +1,4 @@
-# Geben 0.30
+# Geben 0.31
 
 ## About
 
@@ -11,7 +11,7 @@ The original README file remains useful if you've never used geben.
 
 At time of writing, the code has been actively used with:
 
-* Emacs 26, 28, 29
+* Emacs 26, 28, 29, 30
 * Xdebug 2 and 3.
 * PHP `5.*`, `7.*`, `8.*`
 
@@ -33,7 +33,11 @@ Example .emacs setup
     (global-set-key (kbd "C-x RET RET") 'geben)
     (global-set-key (kbd "C-x #") 'geben-end)
 ```
-    
+
+## 0.31
+
+* Fix geben command eval for xdebug with php 8.4
+
 ## 0.30
 
 * Fix geben ungraceful quit with storage corruption, and unreliable restart (removed pp)
